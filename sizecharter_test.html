@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SizeCharter Test Frontend</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 700px;
+    margin: 2rem auto;
+    padding: 1rem;
+    background: #f7f7f7;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+  }
+  label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: bold;
+  }
+  input, select {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.3rem;
+    box-sizing: border-box;
+  }
+  button {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #2980b9;
+    color: white;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  button:hover {
+    background: #1c5980;
+  }
+  .result {
+    margin-top: 2rem;
+    background: white;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 0 8px #ccc;
+  }
+  .alert {
+    background: #fdecea;
+    color: #b22a27;
+    border: 1px solid #b22a27;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    border-radius: 4px;
+  }
+  .alert.warning {
+    background: #fff4e5;
+    color: #b27100;
+    border-color: #b27100;
+  }
+  pre {
+    background: #eef2f5;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+
+<h1>SizeCharter Clothing Size Recommendation</h1>
+
+<form id="sizeForm">
+  <label for="gender">Gender/Category *</label>
+  <select id="gender" name="gender" required>
+    <option value="">-- Select Gender --</option>
+    <option value="womens">Women</option>
+    <option value="mens">Men</option>
+    <option value="maternity">Maternity</option>
+  </select>
+
+  <label for="chest">Chest (cm)</label>
+  <input type="number" id="chest" name="chest" min="20" max="200" step="0.1" />
+
+  <label for="waist">Waist (cm)</label>
+  <input type="number" id="waist" name="waist" min="20" max="200" step="0.1" />
+
+  <label for="hips">Hips (cm)</label>
+  <input type="number" id="hips" name="hips" min="20" max="200" step="0.1" />
+
+  <label for="inseam">Inseam (cm)</label>
+  <input type="number" id="inseam" name="inseam" min="20" max="150" step="0.1" />
+
+  <label for="shoulders">Shoulders (cm)</label>
+  <input type="number" id="shoulders" name="shoulders" min="20" max="80" step="0.1" />
+
+  <label for="neck">Neck (cm)</label>
+  <input type="number" id="neck" name="neck" min="20" max="60" step="0.1" />
+
+  <label for="thigh">Thigh (cm)</label>
+  <input type="number" id="thigh" name="thigh" min="20" max="100" step="0.1" />
+
+  <label for="calf">Calf (cm)</label>
+  <input type="number" id="calf" name="calf" min="15" max="60" step="0.1" />
+
+  <label for="abdomen_shape">Abdomen Shape (optional)</label>
+  <select id="abdomen_shape" name="abdomen_shape">
+    <option value="">-- None --</option>
+    <option value="prominent">Prominent</option>
+    <option value="soft">Soft</option>
+    <option value="flat">Flat</option>
+  </select>
+
+  <label for="hip_shape">Hip Shape (optional)</label>
+  <select id="hip_shape" name="hip_shape">
+    <option value="">-- None --</option>
+    <option value="straight">Straight</option>
+    <option value="curved">Curved</option>
+    <option value="very_curved">Very Curved</option>
+  </select>
+
+  <button type="submit">Get Size Recommendation</button>
+</form>
+
+<div id="result" class="result" style="display:none;">
+  <h2>Size Recommendation</h2>
+  <p><strong>Your recommended size is:</strong> <span id="recommendedSize"></span></p>
+
+  <h3>Original Measurements:</h3>
+  <pre id="originalMeasurements"></pre>
+
+  <h3>Adjusted Measurements (with morphology):</h3>
+  <pre id="adjustedMeasurements"></pre>
+
+  <p><strong>Inferred Body Shape:</strong> <span id="bodyShape"></span></p>
+
+  <h3>Morphology Adjustments:</h3>
+  <pre id="morphologyAdjustments"></pre>
+
+  <div id="warnings"></div>
+  <div id="health"></div>
+</div>
+
+<script>
+  const form = document.getElementById("sizeForm");
+  const resultDiv = document.getElementById("result");
+  const recommendedSizeSpan = document.getElementById("recommendedSize");
+  const originalMeasurementsPre = document.getElementById("originalMeasurements");
+  const adjustedMeasurementsPre = document.getElementById("adjustedMeasurements");
+  const bodyShapeSpan = document.getElementById("bodyShape");
+  const morphologyAdjustmentsPre = document.getElementById("morphologyAdjustments");
+  const warningsDiv = document.getElementById("warnings");
+  const healthDiv = document.getElementById("health");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    warningsDiv.innerHTML = "";
+    healthDiv.innerHTML = "";
+    resultDiv.style.display = "none";
+
+    const data = {
+      gender: form.gender.value,
+      chest: form.chest.value || null,
+      waist: form.waist.value || null,
+      hips: form.hips.value || null,
+      inseam: form.inseam.value || null,
+      shoulders: form.shoulders.value || null,
+      neck: form.neck.value || null,
+      thigh: form.thigh.value || null,
+      calf: form.calf.value || null,
+      abdomen_shape: form.abdomen_shape.value || null,
+      hip_shape: form.hip_shape.value || null
+    };
+
+    // Basic validation guidance:
+    if (!data.gender) {
+      alert("Please select your gender/category.");
+      return;
+    }
+    if (
+      !data.chest && !data.waist && !data.hips &&
+      !data.inseam && !data.shoulders && !data.neck &&
+      !data.thigh && !data.calf
+    ) {
+      alert("Please enter at least one measurement.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/size", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        alert("Error: " + (errData.error || "Unknown error"));
+        return;
+      }
+
+      const result = await response.json();
+
+      recommendedSizeSpan.textContent = result.recommended_size || "N/A";
+      originalMeasurementsPre.textContent = JSON.stringify(result.details.original_measurements, null, 2);
+      adjustedMeasurementsPre.textContent = JSON.stringify(result.details.adjusted_measurements, null, 2);
+      bodyShapeSpan.textContent = result.details.body_shape || "Unknown";
+      morphologyAdjustmentsPre.textContent = JSON.stringify(result.details.morphology_adjustments || {}, null, 2);
+
+      // Display warnings as orange alerts
+      if (result.details.warnings && result.details.warnings.length) {
+        warningsDiv.innerHTML = '<div class="alert warning"><strong>Warnings:</strong><ul>' +
+          result.details.warnings.map(w => `<li>${w}</li>`).join('') +
+          '</ul></div>';
+      } else {
+        warningsDiv.innerHTML = '';
+      }
+
+      // Display health messages (green or red alert)
+      const healthStatus = result.details.health.status;
+      const healthMessages = result.details.health.messages;
+      const healthClass = healthStatus === "healthy" ? "alert" : "alert warning";
+      healthDiv.innerHTML = `<div class="${healthClass}"><strong>Health Status: ${healthStatus.toUpperCase()}</strong><ul>` +
+        healthMessages.map(m => `<li>${m}</li>`).join('') +
+        '</ul></div>';
+
+      resultDiv.style.display = "block";
+
+    } catch (error) {
+      alert("Network or server error: " + error.message);
+    }
+  });
+</script>
+
+</body>
+</html>
