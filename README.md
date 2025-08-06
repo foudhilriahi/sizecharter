@@ -54,7 +54,7 @@ The API is designed for integration with any app or platform, offering JSON REST
 ### Installation
 
 ```bash
-git clone https://github.com/foudhilriahi/sizecharter-mimic.git
+git clone https://github.com/foudhilriahi/sizecharter.git
 cd sizecharter-mimic
 pip install -r requirements.txt  # Flask, Flask-CORS
 
