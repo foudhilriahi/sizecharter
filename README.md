@@ -1,4 +1,3 @@
-# SizeCharter Mimic API
 
 A real-world clothing size recommendation system API inspired by SizeCharter.com.  
 This Flask-based REST API provides personalized size recommendations based on detailed body measurements and morphology, with intelligent analysis and real-world sizing logic for women’s, men’s, and maternity categories.
@@ -55,7 +54,7 @@ The API is designed for integration with any app or platform, offering JSON REST
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/sizecharter-mimic.git
+git clone https://github.com/foudhilriahi/sizecharter-mimic.git
 cd sizecharter-mimic
 pip install -r requirements.txt  # Flask, Flask-CORS
 
